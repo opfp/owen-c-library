@@ -6,7 +6,7 @@
 //	*buf |= map; 	
 //}  
 
-bitmap_rst * brst_init( unsigned char depth, char has_children ) { 
+bitmap_rst * brst_init( unsigned char depth /*, char has_children*/ ) { 
 	bitmap_rst * ret = calloc(sizeof(bitmap_rst), 1); 
 	assert ( depth < 4 ); 
 	ret->depth = depth; 
@@ -22,16 +22,14 @@ bitmap_rst * brst_init( unsigned char depth, char has_children ) {
 	ret->bit_field_sz = bit_ct; 
 	ret->bit_field = calloc( (bit_ct/8)+1 , 1); 
 
-	if ( has_children ) {  
-		ret->sufx_map = htable_init(10); 
-	} 	
+	ret->sufx_map = htable_init(10); 
 
 	return ret; 
 } 
 
 //bitmap_rst * htst_init_cp( bitmap_rst * template,  
 
-void brst_in( bitmap_rst * rst, char * instr ) { 
+void brst_in( bitmap_rst * rst, char * instr, short sid ) { 
 	char * rv = instr; 	
 	char l = 0; 
 	unsigned char l_s = rst->depth; 
@@ -59,7 +57,6 @@ void brst_in( bitmap_rst * rst, char * instr ) {
 	}  
 
 	// we've filled the bitmap portion of the rst, now into the ll portion
-	assert(rst->has_children);  	
 
 	ll_rst_node * cnode = (ll_rst_node *) htable_get(rst->sufx_map, c_str ); 
 	if ( cnode == NULL ) { 
@@ -67,44 +64,72 @@ void brst_in( bitmap_rst * rst, char * instr ) {
 		htable_set(rst->sufx_map, c_str, cnode); 
 	}  
 
-	lrst_in( cnode, rv ); 
+	lrst_in( cnode, rv, sid ); 
 } 
 
-char brst_advance( bitmap_rst * rst, brst_pos * pos, char c) { 
+int brst_advance( bitmap_rst * rst, brst_pos * pos, char c) { 
 	assert ( 'a' <= c && 'z' >= c );  
 	char level = pos->level; 
-	assert ( level >= 0 && level <= rst->depth ); 
+	assert ( level >= 0 ); 
+	//assert ( level >= 0 && level <= rst->depth ); 
 
-	if ( level == rst->depth ) { 
+	_ll_lookup:; 
+
+	if ( level > rst->depth ) { // ll_advance  
+		pos->ll_node = pos->ll_node->children[c-'a']; 
+		if ( ! pos->ll_node ) { 
+			pos->level=-1; 
+			return BRST_NOWORD; 
+		} 
+		short sid;  
+		if ( ( sid = pos->ll_node->eos ) ) { 
+			pos->sid = sid;  
+			return BRST_EOW; 
+		} 
+
+		return BRST_WORD; 
+	} 
+
+	if ( level == rst->depth ) { // transition from bitmap mode to ll mode 
 		ll_rst_node * cnode = (ll_rst_node *) htable_get(rst->sufx_map, pos->c_str ); 
 		if ( cnode == NULL ) {  
 			pos->level=-1; 
-			return 0; 
+			return BRST_NOWORD; 
 		} 
+
 		pos->level++; 	
 		pos->ll_node = cnode; 
-		return 2; 
+
+		short sid;  
+		if ( ( sid = cnode->eos ) ) { 
+			pos->sid = sid;  
+			return BRST_EOW; 
+		} 
+
+		//return BRST_WORD; 
+		level++; 
+		goto _ll_lookup;  
 	}  		
-	
+	// bitmap mode 	
 	pos->c_str <<= 4;  
 	pos->c_str |= (uint32_t) ( c - 'a' );  
 
-	unsigned plo = ( level < 2 ? 0 : rst->level_offsets[level-2] ); 
-	unsigned nlo = ( level == 0 ? 0 : rst->level_offsets[level-1] ); 
+	unsigned plo = level < 2 ? 0 : rst->level_offsets[level-2] ; 
+	unsigned nlo = level == 0 ? 0 : rst->level_offsets[level-1] ; 
 
 	unsigned n_pos = ( ( pos->pos - plo ) * 26 ) + nlo + ( c - 'a' );  
 
 	if ( CHECK_BIT(rst->bit_field, n_pos ) ) { 
 		pos->level++; 
 		pos->pos = n_pos; 
-		return 1; 
+		return BRST_WORD; 
 	} 
 
 	pos->level = -1; 
-	return 0; 
+	return BRST_NOWORD; 
 } 
 
-void lrst_in( ll_rst_node * root, char * instr ) { 
+void lrst_in( ll_rst_node * root, char * instr, short sid) { 
 	//ll_rst_node * cnode = root; 
 	ll_rst_node * nnode; 
 	int idx; 
@@ -119,6 +144,8 @@ void lrst_in( ll_rst_node * root, char * instr ) {
 		} 
 		root = nnode; 	
 	} 
+
+	root->eos = sid; 
 }  
 
 //lrst_advance( ll_rst_node * node, char c) { 

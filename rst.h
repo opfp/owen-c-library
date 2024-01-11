@@ -4,6 +4,10 @@
 #define SET_BIT(buf,idx) ( *((buf)+((idx)/8)) |= ( 1 << ((idx)%8) ) )
 #define CHECK_BIT(buf,idx) ( *((buf)+((idx)/8)) & ( 1 << ((idx)%8) ) )
 
+#define BRST_NOWORD 0  
+#define BRST_WORD 1 
+#define BRST_EOW 2 
+
 #include <stdlib.h> 
 #include <assert.h> 
 #include <stdint.h> 
@@ -19,7 +23,7 @@ typedef struct {
 } bitmap_rst; 
 
 typedef struct { 
-	//char eos; 
+	short eos; 
 	void * children[26]; 
 } ll_rst_node; 
 
@@ -28,6 +32,7 @@ typedef struct {
 	unsigned pos; 
 	uint32_t c_str; 
 	ll_rst_node * ll_node; 
+	short sid; 
 } brst_pos; 
 
 //typedef struct { 
@@ -37,13 +42,13 @@ typedef struct {
 //	//ll_node * sufxs; 
 //} hrst_pos; 
 
-bitmap_rst * brst_init(unsigned char depth, char has_children); 
-void brst_in(bitmap_rst * rst, char * instr);  
-char brst_advance( bitmap_rst * rst, brst_pos * pos, char c); 
+bitmap_rst * brst_init(unsigned char depth); 
+void brst_in(bitmap_rst * rst, char * instr, short sid);  
+int brst_advance( bitmap_rst * rst, brst_pos * pos, char c); 
 
 //hrst_pos hrst_advance(hybrid_rst * rst, hrst_pos pos, char c);  
 
 
-void lrst_in(ll_rst_node * root, char * instr );  
+void lrst_in(ll_rst_node * root, char * instr, short sid);  
 
 #endif 
