@@ -29,7 +29,7 @@ bitmap_rst * brst_init( unsigned char depth /*, char has_children*/ ) {
 
 //bitmap_rst * htst_init_cp( bitmap_rst * template,  
 
-void brst_in( bitmap_rst * rst, char * instr, short sid ) { 
+short brst_in( bitmap_rst * rst, char * instr, short sid ) { 
 	char * rv = instr; 	
 	char l = 0; 
 	unsigned char l_s = rst->depth; 
@@ -42,7 +42,7 @@ void brst_in( bitmap_rst * rst, char * instr, short sid ) {
 	while ( l < l_s ) { 
 		c = *rv++; 
 		if ( !c ) 
-			return;  
+			assert(0);  
 		assert( c >= 'a' && c <= 'z' );  
 		cbit += ( c - 'a' ); 
 		SET_BIT(rst->bit_field, (cbit+c_off) ); 	
@@ -64,7 +64,7 @@ void brst_in( bitmap_rst * rst, char * instr, short sid ) {
 		htable_set(rst->sufx_map, c_str, cnode); 
 	}  
 
-	lrst_in( cnode, rv, sid ); 
+	return lrst_in( cnode, rv, sid ); 
 } 
 
 int brst_advance( bitmap_rst * rst, brst_pos * pos, char c) { 
@@ -129,7 +129,7 @@ int brst_advance( bitmap_rst * rst, brst_pos * pos, char c) {
 	return BRST_NOWORD; 
 } 
 
-void lrst_in( ll_rst_node * root, char * instr, short sid) { 
+short lrst_in( ll_rst_node * root, char * instr, short sid) { 
 	//ll_rst_node * cnode = root; 
 	ll_rst_node * nnode; 
 	int idx; 
@@ -145,7 +145,12 @@ void lrst_in( ll_rst_node * root, char * instr, short sid) {
 		root = nnode; 	
 	} 
 
+	if ( root->eos ) { 
+		return root->eos; 
+	} 
+
 	root->eos = sid; 
+	return 0; 
 }  
 
 //lrst_advance( ll_rst_node * node, char c) { 

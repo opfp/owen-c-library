@@ -6,7 +6,7 @@
 #include <assert.h> 
 #include <string.h> 
 
-#define GQUEUE_BLOCK_SZ 256 
+#define GQUEUE_BLOCK_SZ 8 
 
 typedef struct { 
 	unsigned short size; 

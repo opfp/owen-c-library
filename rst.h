@@ -43,12 +43,12 @@ typedef struct {
 //} hrst_pos; 
 
 bitmap_rst * brst_init(unsigned char depth); 
-void brst_in(bitmap_rst * rst, char * instr, short sid);  
+short brst_in(bitmap_rst * rst, char * instr, short sid);  
 int brst_advance( bitmap_rst * rst, brst_pos * pos, char c); 
 
 //hrst_pos hrst_advance(hybrid_rst * rst, hrst_pos pos, char c);  
 
 
-void lrst_in(ll_rst_node * root, char * instr, short sid);  
+short lrst_in(ll_rst_node * root, char * instr, short sid);  
 
 #endif 

@@ -59,11 +59,19 @@ void gqueue_push(gqueue_obj * queue, uint32_t value){
 }   
 
 uint32_t * gqueue_as_array( gqueue_obj * queue, unsigned * ct_wb ) { 
-	size_t arr_sz = queue->node_ct * sizeof(gqueue_node) * sizeof(uint32_t);  
+	size_t arr_sz = ( ( queue->node_ct - 1 ) * GQUEUE_BLOCK_SZ ) + 
+		( queue->tail->size * GQUEUE_BLOCK_SZ ) ;  
+
+	//gqueue_node * c_node = queue->head; 		
+	//while ( c_node )  { 
+	//	arr_sz += c_node->size; 
+	//} 
+
+ 	//	size_t arr_sz = queue->node_ct * sizeof(gqueue_node) * sizeof(uint32_t);  
 	uint32_t * arr = malloc(arr_sz );  
 	// traverse queue 
-	gqueue_node * c_node = queue->head; 		
 	uint32_t * dest = arr; 
+	gqueue_node * c_node = queue->head; 
 	while (c_node) { 
 		// copy  from s_i to s_i + size  
 		memcpy(dest, c_node->elems+c_node->s_i, c_node->size * sizeof(uint32_t) ); 
