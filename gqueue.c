@@ -28,6 +28,18 @@ uint32_t gqueue_pop( gqueue_obj * queue ){
 
 	if ( !head->size && head->next) { // if we popped off the last node in this block  
 		queue->head = head->next; // make the head the next block by chaning head * in user's mem  
+		// mark this as a free node
+		if ( queue->free_head ) { 
+			queue->free_tail->next = head; 	
+		} else { 
+			queue->free_head = head; 
+		}
+		// always appended as last cnode - the nodes always keep their ordering 
+		queue->free_tail = head; 
+		// node to be recycled 
+		head->s_i = 0; 
+		head->size = 0;  
+		head->next = NULL; 
 	} 
 	return ret; 
 }  
@@ -48,12 +60,21 @@ void gqueue_push(gqueue_obj * queue, uint32_t value){
 	assert(!cnode->next);
 
 	//while ( cnode->next ) { cnode = cnode->next; }  
-	if ( (cnode->s_i + cnode->size) == (GQUEUE_BLOCK_SZ ) ) { //need to alloc new block  
-		gqueue_node * new_b = calloc(sizeof(gqueue_node), 1); 
+	if ( (cnode->s_i + cnode->size) == (GQUEUE_BLOCK_SZ ) ) { 
+		gqueue_node * new_b; 
+		// check for freenode
+		if ( queue->free_head ) { 
+			new_b = queue->free_head; 
+			queue->free_head = new_b->next;  
+			new_b->next = NULL; 
+		} else { 
+			//need to alloc new block  
+			new_b = calloc(sizeof(gqueue_node), 1); 
+			queue->node_ct++; 
+		}
 		cnode->next = new_b; 	
 		cnode = new_b; 	
 		queue->tail = new_b; 	
-		queue->node_ct++; 
 	} 
 
 	assert( ( cnode->s_i + cnode->size ) < GQUEUE_BLOCK_SZ ); 

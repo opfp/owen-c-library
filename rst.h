@@ -45,7 +45,7 @@ typedef struct {
 bitmap_rst * brst_init(unsigned char depth); 
 short brst_in(bitmap_rst * rst, char * instr, short sid);  
 int brst_advance( bitmap_rst * rst, brst_pos * pos, char c); 
-
+int lrst_advance( ll_rst_node * rst_head, brst_pos * pos_wb, char c); 
 //hrst_pos hrst_advance(hybrid_rst * rst, hrst_pos pos, char c);  
 
 

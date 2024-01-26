@@ -18,6 +18,8 @@ typedef struct {
 typedef struct { 
 	gqueue_node * head; 	
 	gqueue_node * tail; 	
+	gqueue_node * free_head; 
+	gqueue_node * free_tail;
 	unsigned node_ct; 
 } gqueue_obj; 
 

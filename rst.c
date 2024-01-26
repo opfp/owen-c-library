@@ -76,18 +76,19 @@ int brst_advance( bitmap_rst * rst, brst_pos * pos, char c) {
 	_ll_lookup:; 
 
 	if ( level > rst->depth ) { // ll_advance  
-		pos->ll_node = pos->ll_node->children[c-'a']; 
-		if ( ! pos->ll_node ) { 
-			pos->level=-1; 
-			return BRST_NOWORD; 
-		} 
-		short sid;  
-		if ( ( sid = pos->ll_node->eos ) ) { 
-			pos->sid = sid;  
-			return BRST_EOW; 
-		} 
-
-		return BRST_WORD; 
+		return lrst_advance(rst, pos, c); 
+//		pos->ll_node = pos->ll_node->children[c-'a']; 
+//		if ( ! pos->ll_node ) { 
+//			pos->level=-1; 
+//			return BRST_NOWORD; 
+//		} 
+//		short sid;  
+//		if ( ( sid = pos->ll_node->eos ) ) { 
+//			pos->sid = sid;  
+//			return BRST_EOW; 
+//		} 
+//
+//		return BRST_WORD; 
 	} 
 
 	if ( level == rst->depth ) { // transition from bitmap mode to ll mode 
@@ -153,6 +154,17 @@ short lrst_in( ll_rst_node * root, char * instr, short sid) {
 	return 0; 
 }  
 
-//lrst_advance( ll_rst_node * node, char c) { 
-//	
-//} 
+int lrst_advance( ll_rst_node * rst, brst * pos, char c) { 
+	pos->ll_node = pos->ll_node->children[c-'a']; 
+	if ( ! pos->ll_node ) { 
+		pos->level=-1; 
+		return BRST_NOWORD; 
+	} 
+	short sid;  
+	if ( ( sid = pos->ll_node->eos ) ) { 
+		pos->sid = sid;  
+		return BRST_EOW; 
+	} 
+
+	return BRST_WORD; 
+} 
