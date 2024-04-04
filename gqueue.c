@@ -28,21 +28,63 @@ uint32_t gqueue_pop( gqueue_obj * queue ){
 
 	if ( !head->size && head->next) { // if we popped off the last node in this block  
 		queue->head = head->next; // make the head the next block by chaning head * in user's mem  
-		// mark this as a free node
-		if ( queue->free_head ) { 
-			queue->free_tail->next = head; 	
+		queue->head->prev = NULL;  
+		queue->node_ct--; 
+
+		if ( ! queue->free_node ) {  
+			queue->free_node = head; 
+		  // node to be recycled 
+		  head->s_i = 0; 
+		  head->size = 0;  
+		 	head->next = NULL; 
+			head->prev = NULL; 
 		} else { 
-			queue->free_head = head; 
-		}
-		// always appended as last cnode - the nodes always keep their ordering 
-		queue->free_tail = head; 
-		// node to be recycled 
-		head->s_i = 0; 
-		head->size = 0;  
-		head->next = NULL; 
+			free(head); 
+	  }													
+		// mark this as a free node
+		//  if ( queue->free_head ) { 
+		//  	queue->free_tail->next = head; 	
+		//  } else { 
+		//  	queue->free_head = head; 
+		//  }
+		//  // always appended as last cnode - the nodes always keep their ordering 
+		//  queue->free_tail = head; 
+		//  // node to be recycled 
+		//  head->s_i = 0; 
+		//  head->size = 0;  
+		//  head->next = NULL; 
 	} 
 	return ret; 
 }  
+
+uint32_t gqueue_pop_back( gqueue_obj * queue ) { 
+	gqueue_node * tail = queue->tail; 
+
+	if ( tail->size == 0 ) { 
+		fprintf(stderr, "gqueue.pop_back: cannot pop from empty queue\n"); 
+		exit(-1); 
+	} 
+
+	uint32_t ret = tail->elems[tail->s_i + tail->size - 1];  
+	tail->size--; 
+
+	if ( tail->size == 0 && tail->prev ) { 
+		queue->tail = tail->prev; 	
+	  queue->tail->next = NULL;  
+		queue->node_ct--; 
+
+		if ( !queue->free_node ) { 	
+			queue->free_node = tail; 
+		  tail->s_i = 0; 
+		  tail->size = 0;  
+		 	tail->next = NULL; 
+			tail->prev = NULL; 
+		} else { 
+			free(tail); 
+		} 
+	} 
+	return ret; 
+} 
 
 uint32_t gqueue_poll( gqueue_node * head) { 
 	//gqueue_node * head = *head_p; 
@@ -59,22 +101,24 @@ void gqueue_push(gqueue_obj * queue, uint32_t value){
 	gqueue_node * cnode = queue->tail; 
 	assert(!cnode->next);
 
-	//while ( cnode->next ) { cnode = cnode->next; }  
 	if ( (cnode->s_i + cnode->size) == (GQUEUE_BLOCK_SZ ) ) { 
+		// need to alloc a new block (or use the free one)
 		gqueue_node * new_b; 
 		// check for freenode
-		if ( queue->free_head ) { 
-			new_b = queue->free_head; 
-			queue->free_head = new_b->next;  
-			new_b->next = NULL; 
+		if ( queue->free_node ) { 
+			new_b = queue->free_node; 
+			queue->free_node = NULL;  
+			//new_b->next = NULL; 
 		} else { 
 			//need to alloc new block  
 			new_b = calloc(sizeof(gqueue_node), 1); 
-			queue->node_ct++; 
 		}
+
+		queue->node_ct++; 
 		cnode->next = new_b; 	
-		cnode = new_b; 	
+		new_b->prev = cnode; 
 		queue->tail = new_b; 	
+		cnode = new_b; 	
 	} 
 
 	assert( ( cnode->s_i + cnode->size ) < GQUEUE_BLOCK_SZ ); 
